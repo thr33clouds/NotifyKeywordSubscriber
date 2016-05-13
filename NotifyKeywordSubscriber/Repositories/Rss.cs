@@ -12,13 +12,13 @@ namespace NotifyKeywordSubscriber.Repositories
 {
     class Rss
     {
-        private async Task<Stream> GetHttpStreamAsync(string url, string contentType = "text/xml")
+        private async Task<Stream> GetHttpStreamAsync(string url, params string[] contentTypes)
         {
             using (var httpcli = new HttpClient())
             {
                 var re = (await httpcli.GetAsync(url)).EnsureSuccessStatusCode();
 
-                if (re.Content.Headers.ContentType == null || re.Content.Headers.ContentType.MediaType != contentType)
+                if (re.Content.Headers.ContentType == null || !contentTypes.Contains(re.Content.Headers.ContentType.MediaType))
                 {
                     throw new HttpRequestException($"Unexpected response content-type: {re.Content.Headers.ContentType?.MediaType}.");
                 }
@@ -34,7 +34,7 @@ namespace NotifyKeywordSubscriber.Repositories
                 var rslt = new Models.RssFeed();
 
                 Task.Run(async () => {
-                    var xdoc = XDocument.Load(await this.GetHttpStreamAsync(url));
+                    var xdoc = XDocument.Load(await this.GetHttpStreamAsync(url, "text/xml", "application/xml"));
                     var channelElement = xdoc.Root.Element("channel");
                     if (channelElement != null)
                     {
